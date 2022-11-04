@@ -1,0 +1,32 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           dynlink-example-package
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/jonathanjameswatson/dynlink#readme>
+homepage:       https://github.com/jonathanjameswatson/dynlink#readme
+bug-reports:    https://github.com/jonathanjameswatson/dynlink/issues
+author:         Jonathan Watson
+maintainer:     23344719+jonathanjameswatson@users.noreply.github.com
+copyright:      2022 Jonathan Watson
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/jonathanjameswatson/dynlink
+
+library
+  exposed-modules:
+      ExamplePackageLib
+  other-modules:
+      Paths_dynlink_example_package
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -dynamic
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010

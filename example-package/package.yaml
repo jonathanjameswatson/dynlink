@@ -1,0 +1,27 @@
+name:                dynlink-example-package
+version:             0.1.0.0
+github:              "jonathanjameswatson/dynlink"
+license:             BSD3
+author:              "Jonathan Watson"
+maintainer:          "23344719+jonathanjameswatson@users.noreply.github.com"
+copyright:           "2022 Jonathan Watson"
+
+description:         Please see the README on GitHub at <https://github.com/jonathanjameswatson/dynlink#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -dynamic
+
+library:
+  source-dirs: src
