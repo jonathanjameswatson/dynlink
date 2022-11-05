@@ -2,7 +2,7 @@ module Main (main) where
 
 import GHC (GhcLink (LinkInMemory), HscEnv, ModuleName, defaultErrorHandler, getSession, getSessionDynFlags, mkModule, mkModuleName, noSrcSpan, runGhc, setSessionDynFlags)
 import GHC.Driver.Monad (liftIO)
-import GHC.Driver.Session (DynFlags, defaultFatalMessager, defaultFlushOut, ghcLink, initDefaultSDocContext)
+import GHC.Driver.Session (DynFlags (ghcMode), GhcMode (CompManager), defaultFatalMessager, defaultFlushOut, ghcLink, initDefaultSDocContext)
 import qualified GHC.Driver.Session as Session
 import GHC.Driver.Types (hsc_dynLinker)
 import GHC.IO.Handle.FD (stdout)
@@ -25,7 +25,7 @@ load moduleNameString symbol = do
   defaultErrorHandler defaultFatalMessager defaultFlushOut $
     runGhc (Just libdir) $ do
       flags' <- getSessionDynFlags
-      let waysCorrectedFlags = flags' {ghcLink = LinkInMemory}
+      let waysCorrectedFlags = flags' {ghcMode = CompManager, ghcLink = LinkInMemory}
       _linkerPackages <- setSessionDynFlags waysCorrectedFlags
       flags <- getSessionDynFlags
 
