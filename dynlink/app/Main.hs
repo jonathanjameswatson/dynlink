@@ -1,20 +1,18 @@
 module Main (main) where
 
-import GHC (GhcLink (LinkInMemory), HscEnv, ModuleName, defaultErrorHandler, getSession, getSessionDynFlags, mkModule, mkModuleName, noSrcSpan, runGhc, setSessionDynFlags)
+import GHC (GhcLink (LinkInMemory), ModuleName, defaultErrorHandler, getSession, getSessionDynFlags, mkModule, mkModuleName, noSrcSpan, runGhc, setSessionDynFlags)
 import GHC.Driver.Monad (liftIO)
-import GHC.Driver.Session (DynFlags (ghcMode), GhcMode (CompManager), defaultFatalMessager, defaultFlushOut, ghcLink, initDefaultSDocContext)
+import GHC.Driver.Session (DynFlags (ghcMode), GhcMode (CompManager), addWay', defaultFatalMessager, defaultFlushOut, ghcLink)
 import qualified GHC.Driver.Session as Session
-import GHC.Driver.Types (hsc_dynLinker)
-import GHC.IO.Handle.FD (stdout)
+import GHC.Driver.Ways (Way (WayDyn))
 import GHC.Paths (libdir)
-import GHC.Runtime.Linker (getHValue, initDynLinker, linkPackages, showLinkerState)
+import GHC.Runtime.Interpreter (withInterp, wormhole)
+import GHC.Runtime.Linker (getHValue, initDynLinker, linkPackages)
 import GHC.Types.Name (mkExternalName, mkVarOcc)
 import GHC.Types.Unique (mkBuiltinUnique)
-import GHC.Unit.Info (UnitInfo, mkUnit, pprUnitInfo)
+import GHC.Unit.Info (UnitInfo, mkUnit)
 import qualified GHC.Unit.Info as Info
 import GHC.Unit.State (lookupModuleInAllUnits)
-import GHC.Utils.Outputable (SDoc, printSDoc)
-import GHC.Utils.Ppr (Mode (PageMode))
 import Unsafe.Coerce (unsafeCoerce)
 
 load ::
@@ -25,35 +23,22 @@ load moduleNameString symbol = do
   defaultErrorHandler defaultFatalMessager defaultFlushOut $
     runGhc (Just libdir) $ do
       flags' <- getSessionDynFlags
-      let waysCorrectedFlags = flags' {ghcMode = CompManager, ghcLink = LinkInMemory}
-      _linkerPackages <- setSessionDynFlags waysCorrectedFlags
+      _ <- setSessionDynFlags $ addWay' WayDyn $ flags' {ghcMode = CompManager, ghcLink = LinkInMemory}
       flags <- getSessionDynFlags
 
       session <- getSession
       liftIO $ initDynLinker session
-      liftIO $ printLinkerState session flags
-
-      liftIO $ putStrLn "-----------"
 
       let moduleName = mkModuleName moduleNameString
       unitInfo <- liftIO $ lookupUnitInfo flags moduleName
-      liftIO $ prettyPrint flags $ pprUnitInfo unitInfo
-
-      liftIO $ putStrLn "-----------"
 
       liftIO $ linkPackages session [Info.unitId unitInfo]
-      liftIO $ printLinkerState session flags
-
-      liftIO $ putStrLn "-----------"
 
       let unit = mkUnit unitInfo
       let module_ =
             mkModule
               unit
               moduleName
-
-      -- liftIO $ linkModule session module_
-
       let name =
             mkExternalName
               (mkBuiltinUnique 0)
@@ -61,7 +46,7 @@ load moduleNameString symbol = do
               (mkVarOcc symbol)
               noSrcSpan
 
-      value <- liftIO $ getHValue session name
+      value <- liftIO $ withInterp session $ \interp -> getHValue session name >>= wormhole interp
       return $ unsafeCoerce value
 
 lookupUnitInfo :: DynFlags -> ModuleName -> IO UnitInfo
@@ -74,18 +59,6 @@ lookupUnitInfo flags moduleName = do
       error "Couldn't find module"
     (_, unitInfo) : _ ->
       return unitInfo
-
-prettyPrint :: DynFlags -> SDoc -> IO ()
-prettyPrint flags sdoc = do
-  let sdocContext = initDefaultSDocContext flags
-  printSDoc sdocContext PageMode stdout sdoc
-  putStrLn ""
-
-printLinkerState :: HscEnv -> DynFlags -> IO ()
-printLinkerState session flags = do
-  let linker = hsc_dynLinker session
-  sdoc <- showLinkerState linker
-  prettyPrint flags sdoc
 
 main :: IO ()
 main = do
